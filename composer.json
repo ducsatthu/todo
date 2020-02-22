@@ -1,0 +1,19 @@
+{
+    "name": "dst/todolist",
+    "description": "Todolist test",
+    "type": "project",
+    "authors": [
+        {
+            "name": "ductranxuan",
+            "email": "ductranxuan.29710@gmail.com"
+        }
+    ],
+    "require": {
+        "php": "^7.2"
+    },
+    "autoload": {
+        "psr-4": {
+            "Dst\\Todo\\": "app//"
+        }
+    }
+}
