@@ -88,6 +88,9 @@ class Route implements Registrar
         if ($uri[0] === '') {
             $uri[0] = '/';
         }
+        foreach ($uri as $item){
+            $uri[] = explode('?', $item);
+        }
         $methodVariable = strtolower($method).'Route';
         $controller = isset(($this->$methodVariable)[$uri[0]])?($this->$methodVariable)[$uri[0]]:($this->defaultController);
 

@@ -7,3 +7,5 @@ $Route->get('/', 'TodoController@index');
 $Route->get('edit', 'TodoController@edit');
 $Route->get('add', 'TodoController@add');
 $Route->post('add', 'TodoController@store');
+$Route->post('filter', 'TodoController@filter');
+$Route->post('update', 'TodoController@update');

@@ -27,7 +27,7 @@
                             <v-text-field
                                     v-model="name"
                                     :error-messages="nameErrors"
-                                    :counter="20"
+                                    :counter="50"
                                     label="Work name"
                                     required
                                     @input="$v.name.$touch()"
@@ -54,6 +54,15 @@
                                     <v-btn text color="primary" @click="$refs.dialog.save(dates)">OK</v-btn>
                                 </v-date-picker>
                             </v-dialog>
+                            <v-select
+                                    v-model="status"
+                                    :items="statusItem"
+                                    :error-messages="statusErrors"
+                                    label="Status"
+                                    required
+                                    @change="$v.status.$touch()"
+                                    @blur="$v.status.$touch()"
+                            ></v-select>
                             <v-btn class="mr-4" color="primary" @click="submit">submit</v-btn>
                             <v-btn @click="clear">clear</v-btn>
                         </form>
@@ -74,13 +83,20 @@
         mixins: [validationMixin],
 
         validations: {
-            name: {required, maxLength: maxLength(20)},
+            name: {required, maxLength: maxLength(50)},
             dates: {required},
+            status: {required},
         },
 
         data: () => ({
             dates: [],
             name: '',
+            status,
+            statusItem: [
+                'Planing',
+                'Doing',
+                'Complete'
+            ],
             modalRange: false,
         }),
 
@@ -91,7 +107,7 @@
             nameErrors() {
                 const errors = []
                 if (!this.$v.name.$dirty) return errors
-                !this.$v.name.maxLength && errors.push('Name must be at most 10 characters long')
+                !this.$v.name.maxLength && errors.push('Name must be at most 50 characters long')
                 !this.$v.name.required && errors.push('Name is required.')
                 return errors
             },
@@ -99,6 +115,12 @@
                 const errors = []
                 if (!this.$v.dates.$dirty) return errors
                 !this.$v.dates.required && errors.push('Date range is required.')
+                return errors
+            },
+            statusErrors() {
+                const errors = []
+                if (!this.$v.status.$dirty) return errors
+                !this.$v.status.required && errors.push('Status is required.')
                 return errors
             },
         },

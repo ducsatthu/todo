@@ -32,4 +32,14 @@ class BaseController
 
         $this->return404();
     }
+
+    /**
+     * return json data
+     * @param $data
+     */
+    public function returnJson($data){
+        header('Content-Type: application/json');
+        echo json_encode($data);
+        die();
+    }
 }

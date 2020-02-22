@@ -21,7 +21,6 @@
     "sass": "^1.25.0",
     "sass-loader": "8.*",
     "vue": "^2.6.11",
-    "vue-cal": "^2.24.0",
     "vue-template-compiler": "^2.6.11",
     "vue-toasted": "^1.1.27",
     "vuelidate": "^0.7.5",
