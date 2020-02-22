@@ -5,6 +5,14 @@ namespace Dst\Todo\Core\Controllers;
 class BaseController
 {
     /**
+     * Return 404 page
+     */
+    public function return404(){
+        header("HTTP/1.0 404 Not Found");
+        echo "Page not found";
+        exit();
+    }
+    /**
      * @param string $view
      * @param $data
      */
@@ -19,6 +27,9 @@ class BaseController
             $content = ob_get_clean();
             ob_clean();
             require_once __DIR__.'/../../Views/Layouts/default.php';
+            exit();
         }
+
+        $this->return404();
     }
 }

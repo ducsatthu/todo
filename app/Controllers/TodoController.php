@@ -18,16 +18,35 @@ class TodoController extends BaseController
         return self::$instance;
     }
 
+    /**
+     * Show calendar
+     */
     public function index(){
         $this->render('index', ['test']);
     }
     public function edit(){
         echo "Hello edit";
     }
+
+    /**
+     * Show form add new
+     */
     public function add(){
         $this->render('add');
     }
+
+    /**
+     * Store
+     */
     public function store(){
-        var_dump($_POST);
+        /**
+         * TODO: CSRF Token
+         */
+        if (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'ilovedeveloper' ) {
+            $json = json_decode(file_get_contents("php://input"));
+        }else{
+            //TODO: 404 return
+            $this->return404();
+        }
     }
 }
