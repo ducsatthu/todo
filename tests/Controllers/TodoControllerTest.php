@@ -3,13 +3,11 @@
 namespace Test\Controllers;
 
 use GuzzleHttp\Client;
-use PHPUnit\Framework\TestCase;
 use Faker;
+use Tests\Base\TestBaseCase;
 
-class TodoControllerTest extends TestCase
+class TodoControllerTest extends TestBaseCase
 {
-    protected $serverDomain = 'http://todo.local';
-
     /**
      * Test index running
      */
@@ -32,22 +30,6 @@ class TodoControllerTest extends TestCase
         $res = $client->request('GET', $this->serverDomain . '/add');
 
         $this->assertEquals(200, $res->getStatusCode());
-    }
-
-    /**
-     * Test error page running
-     */
-    public function testErrorPage()
-    {
-        $client = new Client();
-
-        $res = $client->request('GET', $this->serverDomain . '/randomPage', ['http_errors' => false]);
-
-        $this->assertEquals(404, $res->getStatusCode());
-
-        $res = $client->request('GET', $this->serverDomain . '/anotherPage', ['http_errors' => false]);
-
-        $this->assertEquals(404, $res->getStatusCode());
     }
 
     /**
