@@ -29,6 +29,14 @@ class TodoController extends BaseController
     }
 
     /**
+     * Show form add new
+     */
+    public function add()
+    {
+        $this->render('add');
+    }
+
+    /**
      * Ajax get data
      */
     public function filter()
@@ -36,41 +44,24 @@ class TodoController extends BaseController
         /**
          * TODO: CSRF Token
          */
-        if (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'ilovedeveloper') {
-            $input = json_decode(file_get_contents("php://input"));
-            if (is_object($input) && isset($input->start) && isset($input->end)) {
-                $Todo = new Todo();
-                $data = $Todo->find("`start` >= '$input->start' AND `end` <= '$input->end'");
+        try {
+            if (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'ilovedeveloper') {
+                $input = json_decode(file_get_contents("php://input"));
+                if (is_object($input) && isset($input->start) && isset($input->end)) {
+                    $range = $this->compare($input->start, $input->end);
+                    if (is_object($range)) {
+                        $Todo = new Todo();
+                        $data = $Todo->find("`start` >= '$input->start' AND `end` <= '$input->end'");
 
-                $this->returnJson($data);
-            } else {
-                $this->return404();
+                        $this->returnJson($data);
+                    }
+                }
             }
-        } else {
             //TODO: 404 return
             $this->return404();
+        } catch (\Exception $e) {
+            $this->return404();
         }
-    }
-
-    /**
-     * @throws \Exception
-     */
-    public function edit()
-    {
-        $todo = new Todo();
-
-        $todo->name = 'ABC';
-        $todo->startDate = (new \DateTime())->format('Y-m-d');
-        $todo->endDate = (new \DateTime())->format('Y-m-d');
-        $todo->status = 0;
-    }
-
-    /**
-     * Show form add new
-     */
-    public function add()
-    {
-        $this->render('add');
     }
 
     /**
@@ -81,27 +72,29 @@ class TodoController extends BaseController
         /**
          * TODO: CSRF Token
          */
-        if (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'ilovedeveloper') {
-            $input = json_decode(file_get_contents("php://input"));
-            //TODO: validate rule
-            if (is_object($input) && isset($input->name) && isset($input->status) && isset($input->start) && isset($input->end)) {
-                $Todo = new Todo();
-                $Todo->name = $input->name;
-                $Todo->start = $input->start;
-                $Todo->end = $input->end;
-                $Todo->status = $input->status;
+        try {
+            if (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'ilovedeveloper') {
+                $input = json_decode(file_get_contents("php://input"));
+                //TODO: validate rule
+                if (is_object($input) && isset($input->name) && isset($input->status) && isset($input->start) && isset($input->end)) {
+                    $range = $this->compare($input->start, $input->end);
+                    if (is_object($range)) {
+                        $Todo = new Todo();
+                        $Todo->name = $input->name;
+                        $Todo->start = $range->start;
+                        $Todo->end = $range->end;
+                        $Todo->status = $input->status;
 
-                if ($Todo->save()) {
-                    $this->returnJson([
-                        'success' => true
-                    ]);
-                } else {
-                    $this->return404();
+                        if ($Todo->save()) {
+                            $this->returnJson([
+                                'success' => true
+                            ]);
+                        }
+                    }
                 }
-            } else {
-                $this->return404();
             }
-        } else {
+            $this->return404();
+        } catch (\Exception $e) {
             //TODO: 404 return
             $this->return404();
         }
@@ -116,27 +109,32 @@ class TodoController extends BaseController
         /**
          * TODO: CSRF Token
          */
-        if (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'ilovedeveloper') {
-            $input = json_decode(file_get_contents("php://input"));
-            //TODO: validate rule
-            if (is_object($input) && isset($input->id) && isset($input->name) && isset($input->status) && isset($input->start) && isset($input->end)) {
-                //TODO: Validate ID exist
-                $todo = (new Todo())->find("`id` = '$input->id'");
-                if (!empty($todo) && $todo) {
-                    $todoUpdate = $todo[0];
-                    $todoUpdate->name = $input->name;
-                    $todoUpdate->start = $input->start;
-                    $todoUpdate->end = $input->end;
-                    $todoUpdate->status = $input->status;
-                    if ($todoUpdate->save()) {
-                        $this->returnJson([
-                            'success' => true
-                        ]);
+        try {
+            if (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'ilovedeveloper') {
+                $input = json_decode(file_get_contents("php://input"));
+                //TODO: validate rule
+                $range = $this->compare($input->start, $input->end);
+                if (is_object($input) && isset($input->id) && isset($input->name) && isset($input->status) && isset($input->start) && isset($input->end) && is_object($range)) {
+                    //TODO: Validate ID exist
+                    $todo = (new Todo())->find("`id` = '$input->id'");
+                    if (!empty($todo) && $todo) {
+                        $todoUpdate = $todo[0];
+                        $todoUpdate->name = $input->name;
+                        $todoUpdate->start = $range->start;
+                        $todoUpdate->end = $range->end;
+                        $todoUpdate->status = $input->status;
+                        if ($todoUpdate->save()) {
+                            $this->returnJson([
+                                'success' => true
+                            ]);
+                        }
                     }
                 }
             }
+            $this->return404();
+        } catch (\Exception $e) {
+            $this->return404();
         }
-        $this->return404();
     }
 
     /**
@@ -158,7 +156,7 @@ class TodoController extends BaseController
                 if (!empty($todo) && $todo) {
                     $todoDelete = $todo[0];
                     if ($todoDelete->destroy()) {
-                        return $this->returnJson([
+                        $this->returnJson([
                             'success' => true
                         ]);
                     }
@@ -166,5 +164,38 @@ class TodoController extends BaseController
             }
         }
         $this->return404();
+    }
+
+    /**
+     * Validate
+     * @param $date
+     * @return bool
+     */
+    protected function isDate($date)
+    {
+        return \DateTime::createFromFormat('Y-m-d', $date) !== FALSE;
+    }
+
+    /**
+     * Compare date time
+     * @param $start
+     * @param $end
+     * @return null|object
+     */
+    protected function compare($start, $end)
+    {
+        if ($this->isDate($start) && $this->isDate($end)) {
+            if (strtotime($start) > strtotime($end)) {
+                return (object)[
+                    'start' => $end,
+                    'end' => $start
+                ];
+            }
+            return (object)[
+                'start' => $start,
+                'end' => $end
+            ];
+        }
+        return null;
     }
 }
