@@ -19,7 +19,7 @@ class BaseController
     public function render($view = 'index', $data = [])
     {
         $view_file = __DIR__.'/../../Views/Pages/' . $view . '.php';
-        $actual_link = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? "https" : "http") . "://$_SERVER[HTTP_HOST]$_SERVER[REQUEST_URI]";
+        $actual_link = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? "https" : "http") . "://$_SERVER[HTTP_HOST]";
         if (is_file($view_file)) {
             $data['base_url'] = $actual_link;
             extract($data);
