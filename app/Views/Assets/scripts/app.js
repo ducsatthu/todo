@@ -6,6 +6,8 @@ try {
 
     window.axios = require('axios');
 
+    window.Swal = require('sweetalert2');
+
     window.axios.defaults.headers.common['X-Requested-With'] = 'ILoveDeveloper';
 
 } catch (e) {
@@ -14,7 +16,6 @@ try {
 
 const files = require.context('./', true, /\.vue$/i);
 files.keys().map(key => {
-    console.log(key);
     Vue.component(key.split('/').pop().split('.')[0], files(key).default)
 });
 

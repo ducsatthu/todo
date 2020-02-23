@@ -81,6 +81,8 @@ class Route implements Registrar
     public function getRouteName(): array
     {
         $uri = $_SERVER['REQUEST_URI'];
+        $prefix = $_SERVER['CONTEXT_PREFIX'];
+        $uri = str_replace($prefix, '', $uri);
         $uri = trim($uri, '/');
         $uri = explode('/', $uri);
 
@@ -88,9 +90,11 @@ class Route implements Registrar
         if ($uri[0] === '') {
             $uri[0] = '/';
         }
+
         foreach ($uri as $item){
             $uri[] = explode('?', $item);
         }
+
         $methodVariable = strtolower($method).'Route';
         $controller = isset(($this->$methodVariable)[$uri[0]])?($this->$methodVariable)[$uri[0]]:($this->defaultController);
 

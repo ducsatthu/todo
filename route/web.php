@@ -1,4 +1,5 @@
 <?php
+
 use Dst\Todo\Core\Router\Route;
 
 $Route = Route::getInstance();
@@ -8,4 +9,5 @@ $Route->get('edit', 'TodoController@edit');
 $Route->get('add', 'TodoController@add');
 $Route->post('add', 'TodoController@store');
 $Route->post('filter', 'TodoController@filter');
-$Route->post('update', 'TodoController@update');
+$Route->put('update', 'TodoController@update');
+$Route->delete('delete', 'TodoController@delete');

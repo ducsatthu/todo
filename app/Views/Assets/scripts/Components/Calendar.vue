@@ -1,10 +1,24 @@
 <template>
     <div class="container">
         <h1 class="text-center">Todo list</h1>
-        <p>Author: <a href="mailto:ductranxuan.29710@gmail.com">ductranxuan</a></p>
+        <p>Author: <a href="mailto:ductranxuan.29710@gmail.com">Duc Tran Xuan</a></p>
         <v-btn dark color="primary" href="/add">
             Click here to add new work
         </v-btn>
+        <br/>
+        <br/>
+        <p>
+        <span class="red white--text">
+            <span class="pl-1">This color is PLANING work</span>
+        </span>
+            <span class="orange white--text p1">
+            <span class="pl-1">This color is DOING work</span>
+        </span>
+            <span class="cyan white--text p1">
+            <span class="pl-1">This color is COMPLETE work</span>
+        </span>
+        </p>
+        <p class="red--text">Click on the worksheet to edit</p>
         <v-row class="fill-height">
             <v-col>
                 <v-sheet height="64">
@@ -87,7 +101,7 @@
                                     <v-text-field
                                             v-model="name"
                                             :error-messages="nameErrors"
-                                            :counter="20"
+                                            :counter="50"
                                             label="Work name"
                                             required
                                             @input="$v.name.$touch()"
@@ -114,8 +128,19 @@
                                             <v-btn text color="primary" @click="$refs.dialog.save(dates)">OK</v-btn>
                                         </v-date-picker>
                                     </v-dialog>
-                                    <v-btn class="mr-4" color="primary" @click="submit">submit</v-btn>
-                                    <v-btn @click="clear">clear</v-btn>
+                                    <v-select
+                                            v-model="statusSelect"
+                                            :items="statusItem"
+                                            :error-messages="statusErrors"
+                                            label="Status"
+                                            required
+                                            @change="$v.statusSelect.$touch()"
+                                            @blur="$v.statusSelect.$touch()"
+                                    ></v-select>
+                                    <v-btn class="mr-4" color="primary" @click="submit" :disabled="disabled">submit
+                                    </v-btn>
+                                    <v-btn @click="reset" class="mr-4">Reset</v-btn>
+                                    <v-btn @click="deleteItem" color="red">Delete</v-btn>
                                 </form>
                             </v-card-text>
                         </v-card>
@@ -138,17 +163,18 @@
             this.$refs.calendar.checkChange()
         },
         validations: {
-            name: {required, maxLength: maxLength(20)},
+            name: {required, maxLength: maxLength(50)},
             dates: {required},
+            statusSelect: {required},
         },
         computed: {
-            dateRangeText () {
+            dateRangeText() {
                 return this.dates.join(' ~ ')
             },
             nameErrors() {
                 const errors = []
                 if (!this.$v.name.$dirty) return errors
-                !this.$v.name.maxLength && errors.push('Name must be at most 10 characters long')
+                !this.$v.name.maxLength && errors.push('Name must be at most 50 characters long')
                 !this.$v.name.required && errors.push('Name is required.')
                 return errors
             },
@@ -156,6 +182,12 @@
                 const errors = []
                 if (!this.$v.dates.$dirty) return errors
                 !this.$v.dates.required && errors.push('Date range is required.')
+                return errors
+            },
+            statusErrors() {
+                const errors = []
+                if (!this.$v.statusSelect.$dirty) return errors
+                !this.$v.statusSelect.required && errors.push('Status is required.')
                 return errors
             },
             title() {
@@ -212,6 +244,14 @@
             selectedOpen: false,
             events: [],
             today: null,
+            status: null,
+            statusSelect: null,
+            statusItem: [
+                'Planing',
+                'Doing',
+                'Complete'
+            ],
+            disabled: false
         }),
         methods: {
             viewDay({date}) {
@@ -232,13 +272,14 @@
             },
             showEvent({nativeEvent, event}) {
                 const open = () => {
-                    this.selectedEvent = event;
+                    this.selectedEvent = Object.assign({}, event);
                     this.selectedElement = nativeEvent.target;
 
                     this.name = event.name;
                     this.dates = [event.start, event.end];
-                    this.status = event.status;
                     this.id = event.id;
+                    this.status = event.status;
+                    this.statusSelect = event.statusSelect;
 
                     setTimeout(() => this.selectedOpen = true, 10)
                 }
@@ -252,37 +293,43 @@
 
                 nativeEvent.stopPropagation()
             },
-            updateRange({start, end}) {
+            fetchData(start, end) {
                 let events = [];
-                this.start = start;
-                this.end = end;
                 axios.post('filter', {start: start.date, end: end.date})
                     .then(res => {
                         events = res.data;
                         this.events = events.map(value => {
-                            switch(value.status) {
+                            switch (value.status) {
                                 case '0':
                                     value.color = 'red';
+                                    value.statusSelect = 'Planing';
                                     break;
                                 case '1':
                                     value.color = 'orange';
+                                    value.statusSelect = 'Doing';
                                     break;
                                 case '2':
                                     value.color = 'cyan';
+                                    value.statusSelect = 'Complete';
                                     break;
                                 default:
-                                // code block
+                                    value.color = 'red';
+                                    value.statusSelect = 'Planing';
+                                    break;
                             }
 
                             return value;
                         })
-                        console.log(this.events)
-
                     }).catch(() => {
                     this.$toasted.error('Loading error...')
                 })
             },
-            nth (d) {
+            updateRange({start, end}) {
+                this.start = start;
+                this.end = end;
+                this.fetchData(start, end)
+            },
+            nth(d) {
                 return d > 3 && d < 21
                     ? 'th'
                     : ['th', 'st', 'nd', 'rd', 'th', 'th', 'th', 'th', 'th', 'th'][d % 10]
@@ -291,26 +338,94 @@
                 this.$v.$touch()
                 if (this.$v.$pending || this.$v.$error) return;
                 //Call api
-                this.$toasted.show("Toasted !!", {
-                    theme: "bubble",
-                    position: "top-right",
-                    duration : 5000
-                });
-                axios.post('/update', {
+
+                this.disabled = true;
+                let start = this.dates[0];
+                let end = this.dates[0];
+                if (typeof this.dates[1] !== 'undefined') {
+                    end = this.dates[1];
+                }
+
+                let status = 0;
+                switch (this.statusSelect) {
+                    case 'Doing':
+                        status = 1;
+                        break;
+                    case 'Complete':
+                        status = 2;
+                        break;
+                    default:
+                        status = 0;
+                        break;
+                }
+                axios.put('/update', {
                     id: this.id,
                     name: this.name,
-                    dates: this.dates
+                    start,
+                    end,
+                    status
                 }).then((res) => {
-                    console.log(res)
-                }).catch(err=> {
-                    console.log(err)
+                    this.disabled = false;
+                    if (res.data.success) {
+                        this.selectedOpen = false;
+                        this.fetchData(this.start, this.end);
+                    }
+                }).catch(err => {
+                    this.disabled = false;
+                    this.selectedOpen = false;
+                    this.$toasted.error('Some thing went wrong!');
                 })
             },
-            clear() {
+            reset() {
                 this.$v.$reset()
-                this.name = ''
-                this.dates = []
+                this.name = this.selectedEvent.name;
+                this.dates = [this.selectedEvent.start, this.selectedEvent.end];
+                this.id = this.selectedEvent.id;
+                this.status = this.selectedEvent.status;
+                this.statusSelect = this.selectedEvent.statusSelect;
             },
+            deleteItem() {
+                Swal.fire({
+                    title: 'Are you sure?',
+                    text: 'You will not be able to recover this work!',
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonText: 'Yes, delete it!',
+                    cancelButtonText: 'No, keep it'
+                }).then((result) => {
+                    if (result.value) {
+
+                        axios.delete('/delete', {
+                            data: {
+                                id: this.id
+                            }
+                        }).then((res) => {
+                            this.disabled = false;
+                            if (res.data.success) {
+                                this.selectedOpen = false;
+                                this.fetchData(this.start, this.end);
+                            }
+                        }).catch(err => {
+                            this.disabled = false;
+                            this.selectedOpen = false;
+                            this.$toasted.error('Some thing went wrong!');
+                        })
+                        Swal.fire(
+                            'Deleted!',
+                            'Your work file has been deleted.',
+                            'success'
+                        )
+                        // For more information about handling dismissals please visit
+                        // https://sweetalert2.github.io/#handling-dismissals
+                    } else if (result.dismiss === Swal.DismissReason.cancel) {
+                        Swal.fire(
+                            'Cancelled',
+                            'Your work is safe :)',
+                            'error'
+                        )
+                    }
+                })
+            }
         },
     }
 </script>

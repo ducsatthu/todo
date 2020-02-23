@@ -1,7 +1,9 @@
 <?php
+
 namespace Dst\Todo\Core\Models;
 
-abstract class Entity {
+abstract class Entity
+{
 
     /**
      * @var PDO
@@ -10,21 +12,29 @@ abstract class Entity {
 
     protected $tableName;
 
-    public function __construct() {
+    /**
+     * Connect DB simple
+     * Entity constructor.
+     * @throws \Exception
+     */
+    public function __construct()
+    {
         try {
-            $this->db = new \PDO('mysql:host=localhost;dbname=todo','root', '');
+            $this->db = new \PDO(PDO_DNS, USERNAME, PASSWORD);
         } catch (\Exception $e) {
             throw new \Exception('Error creating a database connection ');
         }
     }
+
     /**
      * Save method with refection
      *
      * @return mixed
      * @throws \ReflectionException
      */
-    public function save() {
-        try{
+    public function save()
+    {
+        try {
             $class = new \ReflectionClass($this);
             $tableName = strtolower($class->getShortName());
 
@@ -32,18 +42,45 @@ abstract class Entity {
 
             foreach ($class->getProperties(\ReflectionProperty::IS_PUBLIC) as $property) {
                 $propertyName = $property->getName();
-                if($property !== 'id'){
-                    $propsToImplode[] = '`'.$propertyName.'` = "'.$this->{$propertyName}.'"';
+                if ($propertyName !== 'id') { //Except id
+                    $propsToImplode[] = '`' . $propertyName . '` = "' . $this->{$propertyName} . '"';
                 }
             }
 
-            $setClause = implode(',',$propsToImplode);
+            $setClause = implode(',', $propsToImplode);
 
             if ($this->id > 0) {
-                $sqlQuery = 'UPDATE `'.$tableName.'` SET '.$setClause.' WHERE id = '.$this->id;
-            }else{
-                $sqlQuery = 'INSERT INTO `'.$tableName.'` SET '.$setClause;
+                $sqlQuery = 'UPDATE `' . $tableName . '` SET ' . $setClause . ' WHERE id = ' . $this->id;
+            } else {
+                $sqlQuery = 'INSERT INTO `' . $tableName . '` SET ' . $setClause;
             }
+
+//            var_dump($sqlQuery);die();
+            $result = $this->db->exec($sqlQuery);
+
+            if ($this->db->errorCode() !== '00000') {
+                throw new \Exception($this->db->errorInfo()[2]);
+            }
+
+            return $result;
+        } catch (\Exception $e) {
+            //TODO: Save Logs
+            return false;
+        }
+    }
+
+    /**
+     * Destroy record
+     *
+     * @return bool|int
+     */
+    public function destroy()
+    {
+        try {
+            $class = new \ReflectionClass($this);
+            $tableName = strtolower($class->getShortName());
+
+            $sqlQuery = 'DELETE FROM `' . $tableName . '` WHERE  `id` = ' . $this->id;
 
             $result = $this->db->exec($sqlQuery);
 
@@ -52,11 +89,12 @@ abstract class Entity {
             }
 
             return $result;
-        }catch (\Exception $e){
-            echo "Some thing went wrong !";
-            die();
+        } catch (\Exception $e) {
+            //TODO: Save Logs
+            return false;
         }
     }
+
 
     /**
      * Morph function
@@ -64,14 +102,15 @@ abstract class Entity {
      * @return object
      * @throws \ReflectionException
      */
-    public function morph(array $object) {
+    public function morph(array $object)
+    {
         $class = new \ReflectionClass($this);
 
         $entity = $class->newInstance();
 
         foreach ($class->getProperties(\ReflectionProperty::IS_PUBLIC) as $property) {
             if (isset($object[$property->getName()])) {
-                $property->setValue($entity,$object[$property->getName()]);
+                $property->setValue($entity, $object[$property->getName()]);
             }
         }
         return $entity;
@@ -85,22 +124,23 @@ abstract class Entity {
      *
      * TODO: refactor order + limit for paginate
      */
-    public function find ($options = []) {
-        try{
+    public function find($options = [])
+    {
+        try {
             $class = new \ReflectionClass($this);
             $tableName = strtolower($class->getShortName());
 
             $result = [];
-            $query = 'SELECT * FROM `'.$tableName.'`';
+            $query = 'SELECT * FROM `' . $tableName . '`';
             $whereConditions = [];
 
             if (is_array($options) && !empty($options)) {
                 foreach ($options as $key => $value) {
-                    $whereConditions[] = '`'.$key.'` = "'.$value.'"';
+                    $whereConditions[] = '`' . $key . '` = "' . $value . '"';
                 }
-                $query .= " WHERE ".implode(' AND ',$whereConditions);
-            }elseif (is_string($options)) {
-                $query .= ' WHERE '.$options;
+                $query .= " WHERE " . implode(' AND ', $whereConditions);
+            } elseif (is_string($options)) {
+                $query .= ' WHERE ' . $options;
             }
 
             $raw = $this->db->query($query);
@@ -114,9 +154,9 @@ abstract class Entity {
             }
 
             return $result;
-        }catch (\Exception $e){
-            echo "Some thing went wrong !";
-            die();
+        } catch (\Exception $e) {
+            //TODO: Save Logs
+            return null;
         }
     }
 }

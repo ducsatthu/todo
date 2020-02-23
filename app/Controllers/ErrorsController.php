@@ -7,6 +7,7 @@ use Dst\Todo\Core\Controllers\BaseController;
 class ErrorsController extends BaseController
 {
     private static $instance = NULl;
+
     /**
      * Singleton load
      */
@@ -23,6 +24,6 @@ class ErrorsController extends BaseController
      */
     public function index()
     {
-        echo "Page not found";
+        $this->return404();
     }
 }

@@ -63,8 +63,9 @@
                                     @change="$v.status.$touch()"
                                     @blur="$v.status.$touch()"
                             ></v-select>
-                            <v-btn class="mr-4" color="primary" @click="submit">submit</v-btn>
-                            <v-btn @click="clear">clear</v-btn>
+                            <v-btn class="mr-4" color="primary" @click="submit" :disabled="disabled">submit</v-btn>
+                            <v-btn @click="clear" class="mr-4">clear</v-btn>
+                            <v-btn href="/">Back to home</v-btn>
                         </form>
                     </v-card-text>
                 </v-card>
@@ -97,11 +98,12 @@
                 'Doing',
                 'Complete'
             ],
+            disabled: false,
             modalRange: false,
         }),
 
         computed: {
-            dateRangeText () {
+            dateRangeText() {
                 return this.dates.join(' ~ ')
             },
             nameErrors() {
@@ -129,25 +131,63 @@
             submit() {
                 this.$v.$touch()
                 if (this.$v.$pending || this.$v.$error) return;
-                //Call api
-                this.$toasted.show("Toasted !!", {
-                    theme: "bubble",
-                    position: "top-right",
-                    duration : 5000
-                });
+                this.disabled = true;
+                let start = this.dates[0];
+                let end = this.dates[0];
+                if (typeof this.dates[1] !== 'undefined') {
+                    end = this.dates[1];
+                }
+
+                let status = 0;
+                switch (this.status) {
+                    case 'Doing':
+                        status = 1;
+                        break;
+                    case 'Complete':
+                        status = 2;
+                        break;
+                    default:
+                        status = 0;
+                        break;
+                }
+
                 axios.post('/add', {
                     name: this.name,
-                    dates: this.dates
+                    start,
+                    end,
+                    status
                 }).then((res) => {
-                    console.log(res)
-                }).catch(err=> {
-                    console.log(err)
+                    this.clear();
+                    if (res.data.success) {
+                        this.$toasted.info("Add Work successfully! Redirecting to home page in 2 seconds", {
+                            theme: "bubble",
+                            position: "top-right",
+                            duration: 5000
+                        });
+                        setTimeout(function () {
+                            window.location = '/';
+                        }, 2000);
+                    } else {
+                        this.$toasted.error("Some thing went wrong!", {
+                            theme: "bubble",
+                            position: "top-right",
+                            duration: 5000
+                        });
+                    }
+                }).catch(() => {
+                    //Call api
+                    this.$toasted.error("Some thing went wrong!", {
+                        theme: "bubble",
+                        position: "top-right",
+                        duration: 5000
+                    });
                 })
             },
             clear() {
-                this.$v.$reset()
-                this.name = ''
-                this.dates = []
+                this.$v.$reset();
+                this.name = '';
+                this.dates = [];
+                this.status = '';
             },
         },
     }
